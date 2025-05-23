@@ -1,0 +1,517 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Impulse Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .situation-card {
+            transition: all 0.3s ease;
+        }
+        .situation-card.hidden {
+            display: none;
+        }
+        .timer {
+            font-weight: bold;
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold text-center mb-4">Risk Impulse Test</h1>
+        <p class="text-sm text-gray-600 mb-4">Đọc kỹ từng tình huống (60 giây), chọn phát hiện rủi ro, mức độ nghiêm trọng, và phản ứng phù hợp.</p>
+        
+        <div id="timer" class="text-center text-lg timer mb-4">Thời gian: 60s</div>
+        
+        <div id="situations">
+            <!-- Situation 1 -->
+            <div class="situation-card mb-6" data-id="1">
+                <h2 class="text-lg font-semibold">Tình huống 1</h2>
+                <p class="text-sm text-gray-700 mb-2">Khách hàng doanh nghiệp với doanh thu 500 tỷ đồng/năm đề nghị tăng hạn mức tín dụng thêm 30%. Báo cáo tài chính cho thấy tăng trưởng doanh thu 25%, lợi nhuận tăng 15%. Tuy nhiên, dòng tiền từ hoạt động kinh doanh giảm 10% và hàng tồn kho tăng 40%.</p>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Phát hiện rủi ro:</label>
+                    <select class="w-full border rounded p-2" name="risk1">
+                        <option value="">Chọn</option>
+                        <option value="Có">Có</option>
+                        <option value="Không">Không</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Mức độ nghiêm trọng (1-5):</label>
+                    <input type="number" min="1" max="5" class="w-full border rounded p-2" name="severity1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Phản ứng:</label>
+                    <select class="w-full border rounded p-2" name="response1">
+                        <option value="">Chọn</option>
+                        <option value="A">A. Phê duyệt tăng hạn mức dựa trên tăng trưởng doanh thu và lợi nhuận ấn tượng</option>
+                        <option value="B">B. Yêu cầu thêm thông tin về nguyên nhân dòng tiền giảm và hàng tồn kho tăng trước khi quyết định</option>
+                        <option value="C">C. Từ chối tăng hạn mức do dấu hiệu dòng tiền không khả quan</option>
+                        <option value="D">D. Đề xuất tăng hạn mức nhưng kèm điều kiện bổ sung tài sản đảm bảo</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Situation 2 -->
+            <div class="situation-card mb-6 hidden" data-id="2">
+                <h2 class="text-lg font-semibold">Tình huống 2</h2>
+                <p class="text-sm text-gray-700 mb-2">Ngân hàng vừa triển khai ứng dụng mobile banking mới với tính năng xác thực sinh trắc học. Trong tuần đầu ra mắt, có 5 báo cáo từ khách hàng về lỗi đăng nhập, nhưng không có giao dịch bất thường nào được ghi nhận.</p>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Phát hiện rủi ro:</label>
+                    <select class="w-full border rounded p-2" name="risk2">
+                        <option value="">Chọn</option>
+                        <option value="Có">Có</option>
+                        <option value="Không">Không</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Mức độ nghiêm trọng (1-5):</label>
+                    <input type="number" min="1" max="5" class="w-full border rounded p-2" name="severity2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Phản ứng:</label>
+                    <select class="w-full border rounded p-2" name="response2">
+                        <option value="">Chọn</option>
+                        <option value="A">A. Tạm dừng tính năng xác thực sinh trắc học cho đến khi xác định nguyên nhân</option>
+                        <option value="B">B. Tiếp tục theo dõi và thu thập thêm phản hồi, không cần hành động ngay</option>
+                        <option value="C">C. Tăng cường giám sát giao dịch cho tất cả tài khoản sử dụng tính năng mới</option>
+                        <option value="D">D. Yêu cầu kiểm tra bảo mật khẩn cấp đối với tính năng sinh trắc học</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Situation 3 -->
+            <div class="situation-card mb-6 hidden" data-id="3">
+                <h2 class="text-lg font-semibold">Tình huống 3</h2>
+                <p class="text-sm text-gray-700 mb-2">Nhân viên tín dụng báo cáo một khách hàng VIP thường xuyên giao dịch với đối tác ở quốc gia vừa bị đưa vào danh sách theo dõi của FATF. Các giao dịch đều có hồ sơ chứng từ đầy đủ và phù hợp với hoạt động kinh doanh đã khai báo.</p>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Phát hiện rủi ro:</label>
+                    <select class="w-full border rounded p-2" name="risk3">
+                        <option value="">Chọn</option>
+                        <option value="Có">Có</option>
+                        <option value="Không">Không</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Mức độ nghiêm trọng (1-5):</label>
+                    <input type="number" min="1" max="5" class="w-full border rounded p-2" name="severity3">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Phản ứng:</label>
+                    <select class="w-full border rounded p-2" name="response3">
+                        <option value="">Chọn</option>
+                        <option value="A">A. Tiếp tục cho phép giao dịch vì đã có đầy đủ chứng từ hợp lệ</option>
+                        <option value="B">B. Yêu cầu thẩm định nâng cao đối với tất cả giao dịch với đối tác từ quốc gia đó</option>
+                        <option value="C">C. Báo cáo ngay cho bộ phận Tuân thủ/AML để thẩm định chuyên sâu</option>
+                        <option value="D">D. Tạm dừng mọi giao dịch với đối tác đến từ quốc gia trong danh sách theo dõi</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Situation 4 -->
+            <div class="situation-card mb-6 hidden" data-id="4">
+                <h2 class="text-lg font-semibold">Tình huống 4</h2>
+                <p class="text-sm text-gray-700 mb-2">Một doanh nghiệp bất động sản hạng A, khách hàng 5 năm của ngân hàng, đề nghị cơ cấu lại khoản vay 200 tỷ đồng sắp đáo hạn. Lý do đưa ra là 'để phù hợp với kế hoạch kinh doanh dài hạn'. Báo cáo tài chính quý mới nhất cho thấy tỷ lệ nợ/vốn chủ tăng từ 2.1 lên 2.8, trong khi tỷ lệ thanh toán nhanh giảm từ 1.2 xuống 0.9.</p>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Phát hiện rủi ro:</label>
+                    <select class="w-full border rounded p-2" name="risk4">
+                        <option value="">Chọn</option>
+                        <option value="Có">Có</option>
+                        <option value="Không">Không</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Mức độ nghiêm trọng (1-5):</label>
+                    <input type="number" min="1" max="5" class="w-full border rounded p-2" name="severity4">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Phản ứng:</label>
+                    <select class="w-full border rounded p-2" name="response4">
+                        <option value="">Chọn</option>
+                        <option value="A">A. Đồng ý cơ cấu lại dựa trên lịch sử tín dụng tốt và xếp hạng A</option>
+                        <option value="B">B. Yêu cầu giải trình chi tiết về kế hoạch kinh doanh và phương án cải thiện tỷ lệ thanh khoản</option>
+                        <option value="C">C. Từ chối cơ cấu và yêu cầu thanh toán đúng hạn theo hợp đồng gốc</option>
+                        <option value="D">D. Đồng ý cơ cấu nhưng yêu cầu giảm dư nợ và tăng tài sản đảm bảo</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Situation 5 -->
+            <div class="situation-card mb-6 hidden" data-id="5">
+                <h2 class="text-lg font-semibold">Tình huống 5</h2>
+                <p class="text-sm text-gray-700 mb-2">Một khách hàng doanh nghiệp mới, hoạt động trong lĩnh vực công nghệ, đề nghị vay 50 tỷ đồng để mở rộng hoạt động. Doanh nghiệp có tốc độ tăng trưởng doanh thu 50%/năm trong 2 năm qua, nhưng vẫn chưa có lợi nhuận. Khách hàng có thể cung cấp bảo lãnh cá nhân từ người sáng lập với tài sản 100 tỷ đồng đã được thẩm định.</p>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Phát hiện rủi ro:</label>
+                    <select class="w-full border rounded p-2" name="risk5">
+                        <option value="">Chọn</option>
+                        <option value="Có">Có</option>
+                        <option value="Không">Không</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Mức độ nghiêm trọng (1-5):</label>
+                    <input type="number" min="1" max="5" class="w-full border rounded p-2" name="severity5">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Phản ứng:</label>
+                    <select class="w-full border rounded p-2" name="response5">
+                        <option value="">Chọn</option>
+                        <option value="A">A. Từ chối khoản vay vì doanh nghiệp chưa có lợi nhuận</option>
+                        <option value="B">B. Phê duyệt khoản vay dựa trên tăng trưởng doanh thu và bảo lãnh cá nhân đầy đủ</option>
+                        <option value="C">C. Đề xuất khoản vay nhỏ hơn (~30 tỷ) để đánh giá khả năng trả nợ trước khi cấp đầy đủ</option>
+                        <option value="D">D. Phê duyệt khoản vay nhưng yêu cầu thêm tài sản đảm bảo từ công ty</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Situation 6 -->
+            <div class="situation-card mb-6 hidden" data-id="6">
+                <h2 class="text-lg font-semibold">Tình huống 6</h2>
+                <p class="text-sm text-gray-700 mb-2">Phòng IT báo cáo phát hiện một mã độc trong hệ thống email nội bộ của ngân hàng, có khả năng đã tồn tại 2 tuần. Chưa phát hiện dữ liệu bị rò rỉ hay bị mã hóa, nhưng có dấu hiệu cho thấy attacker đã truy cập được vào hệ thống. Đội IT đã cô lập máy chủ bị ảnh hưởng và đang khôi phục từ bản sao lưu.</p>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Phát hiện rủi ro:</label>
+                    <select class="w-full border rounded p-2" name="risk6">
+                        <option value="">Chọn</option>
+                        <option value="Có">Có</option>
+                        <option value="Không">Không</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Mức độ nghiêm trọng (1-5):</label>
+                    <input type="number" min="1" max="5" class="w-full border rounded p-2" name="severity6">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Phản ứng:</label>
+                    <select class="w-full border rounded p-2" name="response6">
+                        <option value="">Chọn</option>
+                        <option value="A">A. Tiếp tục theo dõi và chờ báo cáo từ đội IT, không cần hành động thêm</option>
+                        <option value="B">B. Báo cáo ngay cho Ban lãnh đạo và kích hoạt quy trình ứng phó sự cố</option>
+                        <option value="C">C. Khôi phục toàn bộ hệ thống từ bản sao lưu và tạm đóng hệ thống email</option>
+                        <option value="D">D. Thuê chuyên gia bảo mật bên ngoài để đánh giá mức độ xâm nhập</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Situation 7 -->
+            <div class="situation-card mb-6 hidden" data-id="7">
+                <h2 class="text-lg font-semibold">Tình huống 7</h2>
+                <p class="text-sm text-gray-700 mb-2">Một khách hàng VIP gọi điện trực tiếp cho Giám đốc chi nhánh, yêu cầu chuyển gấp 5 triệu USD sang một tài khoản mới ở nước ngoài để 'nắm bắt cơ hội đầu tư hiếm có'. Khách hàng nói không thể đến ngân hàng vì đang ở nước ngoài và cần thực hiện giao dịch trong ngày. Email xác nhận được gửi từ địa chỉ email chính thức của khách hàng.</p>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Phát hiện rủi ro:</label>
+                    <select class="w-full border rounded p-2" name="risk7">
+                        <option value="">Chọn</option>
+                        <option value="Có">Có</option>
+                        <option value="Không">Không</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Mức độ nghiêm trọng (1-5):</label>
+                    <input type="number" min="1" max="5" class="w-full border rounded p-2" name="severity7">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Phản ứng:</label>
+                    <select class="w-full border rounded p-2" name="response7">
+                        <option value="">Chọn</option>
+                        <option value="A">A. Thực hiện giao dịch theo yêu cầu vì là khách VIP và đã có email xác nhận</option>
+                        <option value="B">B. Từ chối giao dịch do không tuân thủ quy trình xác thực</option>
+                        <option value="C">C. Liên hệ với khách hàng qua số điện thoại đăng ký chính thức để xác minh yêu cầu</option>
+                        <option value="D">D. Đề nghị khách hàng đợi đến khi trở về trong nước để thực hiện giao dịch</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Situation 8 -->
+            <div class="situation-card mb-6 hidden" data-id="8">
+                <h2 class="text-lg font-semibold">Tình huống 8</h2>
+                <p class="text-sm text-gray-700 mb-2">Một nhân viên kho quỹ báo cáo phát hiện 6 tờ tiền mệnh giá 500,000 VND nghi là giả trong lô tiền vừa được kiểm đếm và nhập kho. Tiền đến từ một chuỗi cửa hàng bán lẻ lớn, khách hàng doanh nghiệp thân thiết của chi nhánh. Quy trình kiểm quỹ đã được tuân thủ nhưng không phát hiện được tại thời điểm giao dịch.</p>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Phát hiện rủi ro:</label>
+                    <select class="w-full border rounded p-2" name="risk8">
+                        <option value="">Chọn</option>
+                        <option value="Có">Có</option>
+                        <option value="Không">Không</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Mức độ nghiêm trọng (1-5):</label>
+                    <input type="number" min="1" max="5" class="w-full border rounded p-2" name="severity8">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Phản ứng:</label>
+                    <select class="w-full border rounded p-2" name="response8">
+                        <option value="">Chọn</option>
+                        <option value="A">A. Thông báo cho cửa hàng và yêu cầu đổi lại tiền thật</option>
+                        <option value="B">B. Báo cáo ngay cho cơ quan công an về tiền giả</option>
+                        <option value="C">C. Ghi nhận sự việc, báo cáo nội bộ và tăng cường kiểm soát với khách hàng này</option>
+                        <option value="D">D. Thiết lập quy trình kiểm tra mới, nghiêm ngặt hơn cho tất cả giao dịch tiền mặt</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Situation 9 -->
+            <div class="situation-card mb-6 hidden" data-id="9">
+                <h2 class="text-lg font-semibold">Tình huống 9</h2>
+                <p class="text-sm text-gray-700 mb-2">Ngân hàng vừa nhận được thông báo từ Cơ quan Thanh tra, Giám sát Ngân hàng về việc sẽ thanh tra toàn diện việc tuân thủ quy định phòng chống rửa tiền trong vòng 2 tuần tới. Rà soát nhanh nội bộ cho thấy khoảng 5% hồ sơ KYC của khách hàng doanh nghiệp có thông tin chưa cập nhật trong 24 tháng qua.</p>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Phát hiện rủi ro:</label>
+                    <select class="w-full border rounded p-2" name="risk9">
+                        <option value="">Chọn</option>
+                        <option value="Có">Có</option>
+                        <option value="Không">Không</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Mức độ nghiêm trọng (1-5):</label>
+                    <input type="number" min="1" max="5" class="w-full border rounded p-2" name="severity9">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Phản ứng:</label>
+                    <select class="w-full border rounded p-2" name="response9">
+                        <option value="">Chọn</option>
+                        <option value="A">A. Tổ chức nhóm làm việc khẩn cấp để cập nhật toàn bộ hồ sơ trong vòng 2 tuần</option>
+                        <option value="B">B. Báo cáo trước cho cơ quan thanh tra về tình trạng và đề xuất kế hoạch khắc phục</option>
+                        <option value="C">C. Tập trung cập nhật hồ sơ của khách hàng lớn và có nhiều giao dịch trước</option>
+                        <option value="D">D. Thuê đơn vị tư vấn bên ngoài để hỗ trợ rà soát và cập nhật hồ sơ</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Situation 10 -->
+            <div class="situation-card mb-6 hidden" data-id="10">
+                <h2 class="text-lg font-semibold">Tình huống 10</h2>
+                <p class="text-sm text-gray-700 mb-2">Một khách hàng doanh nghiệp lớn trong lĩnh vực sản xuất linh kiện điện tử, chiếm 12% danh mục tín dụng doanh nghiệp của ngân hàng, thông báo họ đang cân nhắc di dời 70% công suất sản xuất từ Việt Nam sang một nước láng giềng do căng thẳng thương mại mới giữa hai cường quốc kinh tế và tác động đến thuế xuất khẩu.</p>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Phát hiện rủi ro:</label>
+                    <select class="w-full border rounded p-2" name="risk10">
+                        <option value="">Chọn</option>
+                        <option value="Có">Có</option>
+                        <option value="Không">Không</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium">Mức độ nghiêm trọng (1-5):</label>
+                    <input type="number" min="1" max="5" class="w-full border rounded p-2" name="severity10">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Phản ứng:</label>
+                    <select class="w-full border rounded p-2" name="response10">
+                        <option value="">Chọn</option>
+                        <option value="A">A. Duy trì quan hệ bình thường vì đây mới chỉ là kế hoạch cân nhắc</option>
+                        <option value="B">B. Tiếp cận khách hàng để tìm hiểu chi tiết kế hoạch và đánh giá tác động</option>
+                        <option value="C">C. Rà soát lại toàn bộ danh mục tín dụng và xây dựng kịch bản ứng phó nếu khách hàng di dời</option>
+                        <option value="D">D. Yêu cầu giảm dần hạn mức tín dụng với khách hàng này trong thời gian tới</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-between">
+            <button id="prevBtn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded disabled:opacity-50" disabled>Trước</button>
+            <button id="nextBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Tiếp</button>
+            <button id="submitBtn" class="bg-green-500 text-white px-4 py-2 rounded hidden">Nộp bài</button>
+        </div>
+
+        <div id="results" class="hidden mt-6">
+            <h2 class="text-xl font-bold mb-4">Kết quả</h2>
+            <div id="rdi-score" class="mb-2"></div>
+            <div id="raa-score" class="mb-2"></div>
+            <div id="dqs-score" class="mb-2"></div>
+            <h3 class="text-lg font-semibold mt-4">Phân tích điểm mạnh/yếu</h3>
+            <div id="analysis" class="text-sm"></div>
+        </div>
+    </div>
+
+    <script>
+        const situations = document.querySelectorAll('.situation-card');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const timerDisplay = document.getElementById('timer');
+        let currentSituation = 0;
+        let timeLeft = 60;
+        let timer;
+
+        const correctAnswers = [
+            { risk: 'Có', severity: 3, response: 'B' },
+            { risk: 'Có', severity: 2, response: 'C' },
+            { risk: 'Có', severity: 4, response: 'C' },
+            { risk: 'Có', severity: 4, response: 'B' },
+            { risk: 'Có', severity: 3, response: 'C' },
+            { risk: 'Có', severity: 5, response: 'B' },
+            { risk: 'Có', severity: 5, response: 'C' },
+            { risk: 'Có', severity: 3, response: 'C' },
+            { risk: 'Có', severity: 4, response: 'B' },
+            { risk: 'Có', severity: 4, response: 'C' }
+        ];
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = 60;
+            timerDisplay.textContent = `Thời gian: ${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = `Thời gian: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    showNextSituation();
+                }
+            }, 1000);
+        }
+
+        function showSituation(index) {
+            situations.forEach((situation, i) => {
+                situation.classList.toggle('hidden', i !== index);
+            });
+            prevBtn.disabled = index === 0;
+            nextBtn.classList.toggle('hidden', index === situations.length - 1);
+            submitBtn.classList.toggle('hidden', index !== situations.length - 1);
+            startTimer();
+        }
+
+        function showNextSituation() {
+            if (currentSituation < situations.length - 1) {
+                currentSituation++;
+                showSituation(currentSituation);
+            }
+        }
+
+        function showPrevSituation() {
+            if (currentSituation > 0) {
+                currentSituation--;
+                showSituation(currentSituation);
+            }
+        }
+
+        function calculateScores() {
+            let rdiCorrect = 0;
+            let raaTotal = 0;
+            let dqsTotal = 0;
+
+            const riskCategories = {
+                'Rủi ro tín dụng': [1, 4, 5],
+                'Rủi ro công nghệ & bảo mật': [2, 6, 7],
+                'Rủi ro hoạt động & tuân thủ': [3, 8, 9],
+                'Rủi ro chiến lược & thị trường': [10]
+            };
+            const categoryScores = {};
+
+            situations.forEach((situation, i) => {
+                const risk = situation.querySelector(`select[name="risk${i + 1}"]`).value;
+                const severity = parseInt(situation.querySelector(`input[name="severity${i + 1}"]`).value) || 0;
+                const response = situation.querySelector(`select[name="response${i + 1}"]`).value;
+
+                // RDI
+                if (risk === correctAnswers[i].risk) {
+                    rdiCorrect++;
+                }
+
+                // RAA
+                raaTotal += 5 - Math.abs(severity - correctAnswers[i].severity);
+
+                // DQS
+                if (response === correctAnswers[i].response) {
+                    dqsTotal += 5;
+                } else if (response && ['A', 'B', 'C', 'D'].includes(response)) {
+                    dqsTotal += 3; // Assuming non-optimal but feasible
+                } else if (response) {
+                    dqsTotal += 1; // Non-optimal and not feasible
+                }
+
+                // Category Scores
+                for (const [category, indices] of Object.entries(riskCategories)) {
+                    if (indices.includes(i + 1)) {
+                        if (!categoryScores[category]) categoryScores[category] = { correct: 0, total: 0 };
+                        categoryScores[category].total++;
+                        if (risk === correctAnswers[i].risk && response === correctAnswers[i].response) {
+                            categoryScores[category].correct++;
+                        }
+                    }
+                }
+            });
+
+            const rdiScore = (rdiCorrect / 10) * 100;
+            const raaScore = (raaTotal / 50) * 100;
+            const dqsScore = (dqsTotal / 50) * 100;
+
+            function getRating(score) {
+                if (score >= 90) return 'Xuất sắc';
+                if (score >= 80) return 'Giỏi';
+                if (score >= 70) return 'Khá';
+                if (score >= 60) return 'Trung bình';
+                return 'Cần cải thiện';
+            }
+
+            const strengths = Object.entries(categoryScores)
+                .filter(([_, score]) => (score.correct / score.total) * 100 >= 80)
+                .map(([category]) => category);
+            const weaknesses = Object.entries(categoryScores)
+                .filter(([_, score]) => (score.correct / score.total) * 100 < 60)
+                .map(([category]) => category);
+
+            document.getElementById('rdi-score').innerHTML = `<strong>RDI (Risk Detection Index):</strong> ${rdiCorrect}/10 (${rdiScore.toFixed(2)}%) - ${getRating(rdiScore)}`;
+            document.getElementById('raa-score').innerHTML = `<strong>RAA (Risk Assessment Accuracy):</strong> ${raaTotal}/50 (${raaScore.toFixed(2)}%) - ${getRating(raaScore)}`;
+            document.getElementById('dqs-score').innerHTML = `<strong>DQS (Decision Quality Score):</strong> ${dqsTotal}/50 (${dqsScore.toFixed(2)}%) - ${getRating(dqsScore)}`;
+            
+            let analysisHTML = '<h4 class="font-semibold">Phân tích theo loại rủi ro:</h4>';
+            for (const [category, score] of Object.entries(categoryScores)) {
+                const percentage = (score.correct / score.total) * 100;
+                analysisHTML += `<p><strong>${category}:</strong> ${score.correct}/${score.total} (${percentage.toFixed(2)}%) - ${getRating(percentage)}</p>`;
+            }
+            analysisHTML += '<h4 class="font-semibold mt-2">Điểm mạnh:</h4>';
+            analysisHTML += strengths.length ? `<p>${strengths.join(', ')}</p>` : '<p>Không có loại rủi ro nào đạt điểm cao (≥80%).</p>';
+            analysisHTML += '<h4 class="font-semibold mt-2">Điểm cần cải thiện:</h4>';
+            analysisHTML += weaknesses.length ? `<p>${weaknesses.join(', ')}</p>` : '<p>Không có loại rủi ro nào có điểm thấp (<60%).</p>';
+
+            document.getElementById('analysis').innerHTML = analysisHTML;
+            document.getElementById('results').classList.remove('hidden');
+            document.getElementById('situations').classList.add('hidden');
+            prevBtn.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            submitBtn.classList.add('hidden');
+            timerDisplay.classList.add('hidden');
+        }
+
+        prevBtn.addEventListener('click', showPrevSituation);
+        nextBtn.addEventListener('click', showNextSituation);
+        submitBtn.addEventListener('click', calculateScores);
+
+        // Start with the first situation
+        showSituation(currentSituation);
+    </script>
+</body>
+</html>
